@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import {
   GoogleAuthProvider,
+  User,
   createUserWithEmailAndPassword,
   getAuth,
   signInWithEmailAndPassword,
@@ -29,45 +30,50 @@ const googleProvider = new GoogleAuthProvider();
 export const logInWithEmailAndPassword = async (
   email: string,
   password: string
-) => {
-  let user = null;
-
+): Promise<User | null> => {
   try {
     const res = await signInWithEmailAndPassword(auth, email, password);
-    user = res.user;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
-    console.error(err);
-    alert(err.message);
+    return res.user;
+  } catch (err) {
+    if (err instanceof Error) {
+      // Handle authentication-specific errors gracefully
+      console.error(err.message);
+      alert(err.message);
+    } else {
+      console.error("Unexpected error", err);
+    }
+    return null; // Return null in case of error
   }
-
-  return user;
 };
 
 export const registerWithEmailAndPassword = async (
   name: string,
   email: string,
   password: string
-) => {
-  let user = null;
-
+): Promise<User | null> => {
   try {
     const res = await createUserWithEmailAndPassword(auth, email, password);
-    user = res.user;
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      name: name,
-      email: user.email,
+    const userData = {
+      uid: res.user.uid,
+      name,
+      email: res.user.email,
       images: [],
-    });
+    };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
-    console.error(err);
-    alert(err.message);
+    await setDoc(doc(db, "users", res.user.uid), userData);
+
+    return res.user;
+  } catch (err) {
+    if (err instanceof Error) {
+      // Handle authentication-specific errors gracefully
+      console.error(err.message);
+      alert(err.message);
+    } else {
+      console.error("Unexpected error", err);
+    }
+    return null; // Return null in case of error
   }
-  return user;
 };
 
 export const logoutFirebase = () => {
@@ -96,9 +102,14 @@ export const signInWithGoogle = async () => {
     } catch (err) {
       console.error(err);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (err: any) {
-    alert(err.message);
+  } catch (err) {
+    if (err instanceof Error) {
+      // TypeScript knows err is an instance of the Error object.
+      console.error(err.message);
+      alert(err.message);
+    } else {
+      console.error("Unexpected error", err);
+    }
   }
 
   return user;

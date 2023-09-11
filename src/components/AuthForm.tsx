@@ -55,29 +55,38 @@ const AuthForm = ({
         );
       }
       if (user !== null) {
-        login({
-          userId: user.uid ?? "",
-          name: user.displayName ?? "",
-          email: user.email ?? "",
-        });
+        const userData = {
+          userId: user.uid || "",
+          name: user.displayName || "",
+          email: user.email || "",
+        };
+
+        login(userData);
         navigate("/");
       }
       setIsSubmitting(false);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        // Handle authentication-specific errors gracefully
+        console.error(err.message);
+        alert(err.message);
+      } else {
+        console.error("Unexpected error", err);
+      }
+      return null; // Return null in case of error
     }
   };
 
   const handleSignInWithGoogle = async () => {
     const user = await signInWithGoogle();
     if (user !== null) {
-      login({
-        userId: user.uid ?? "",
-        name: user.displayName ?? "",
-        email: user.email ?? "",
-      });
+      const userData = {
+        userId: user.uid || "",
+        name: user.displayName || "",
+        email: user.email || "",
+      };
+
+      login(userData);
       navigate("/");
     }
   };
