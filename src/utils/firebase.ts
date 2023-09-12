@@ -58,7 +58,6 @@ export const registerWithEmailAndPassword = async (
       uid: res.user.uid,
       name,
       email: res.user.email,
-      images: [],
     };
 
     await setDoc(doc(db, "users", res.user.uid), userData);
@@ -81,36 +80,34 @@ export const logoutFirebase = () => {
 };
 
 export const signInWithGoogle = async () => {
-  let user = null;
-
   try {
-    const res = await signInWithPopup(auth, googleProvider);
-    user = res.user;
-    try {
-      const docRef = doc(db, "users", user.uid);
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) {
-        console.log("add new user to db");
-        // add new user to database if does not exist
-        await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          name: name,
-          email: user.email,
-          incomes: [],
-        });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  } catch (err) {
-    if (err instanceof Error) {
-      // TypeScript knows err is an instance of the Error object.
-      console.error(err.message);
-      alert(err.message);
-    } else {
-      console.error("Unexpected error", err);
-    }
-  }
+    // Sign in with Google
+    const authResult = await signInWithPopup(auth, googleProvider);
 
-  return user;
+    // Check if the user already exists in the database
+    const userDocRef = doc(db, "users", authResult.user.uid);
+    const userDocSnapshot = await getDoc(userDocRef);
+
+    if (!userDocSnapshot.exists()) {
+      console.log("Adding a new user to the database.");
+      // Add the user to the database if they don't exist
+      const userData = {
+        uid: authResult.user.uid,
+        name: authResult.user.displayName,
+        email: authResult.user.email,
+      };
+      await setDoc(userDocRef, userData);
+    }
+
+    return authResult.user;
+  } catch (err) {
+    console.error("Error during Google sign-in:", err);
+
+    if (err instanceof Error) {
+      // Handle authentication-specific errors gracefully
+      alert(err.message);
+    }
+
+    return null; // Return null in case of error
+  }
 };
